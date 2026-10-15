@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import '../style/LoginPage.css';
+import '../styles/LoginPage.css';
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
@@ -10,8 +10,15 @@ const LoginPage = () => {
   });
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuth();
+  const { user, signIn } = useAuth();
   const navigate = useNavigate();
+
+  // Se l'utente è già autenticato, reindirizza alla home
+  useEffect(() => {
+    if (user) {
+      navigate('/', { replace: true });
+    }
+  }, [user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

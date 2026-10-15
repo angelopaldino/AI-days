@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useIdea } from '../context/IdeaContext'
+import LogoutButton from '../components/LogoutButton'
 import '../styles/HomePage.css'
 
 function HomePage() {
@@ -41,6 +42,11 @@ function HomePage() {
 
   return (
     <div className="home-page">
+      {/* Top right auth bar */}
+      <div style={{ position: 'absolute', top: '1.5rem', right: '1.5rem', zIndex: 50 }}>
+        <LogoutButton />
+      </div>
+
       {/* Ambient background glow */}
       <div className="home-page__ambient">
         <div className="home-page__ambient-blob--top"></div>

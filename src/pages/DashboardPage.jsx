@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useIdea } from '../context/IdeaContext'
 import { analyzeIdea } from '../services/openaiService'
+import LogoutButton from '../components/LogoutButton'
 import '../styles/DashboardPage.css'
 
 function DashboardPage() {
@@ -228,9 +229,12 @@ function DashboardPage() {
               </span>
               <span>Nuova analisi</span>
             </Link>
-            <div className="dashboard-header__status">
-              <span className="dashboard-header__status-dot"></span>
-              <span>TELEMETRIA AI COMPLETATA</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+              <div className="dashboard-header__status">
+                <span className="dashboard-header__status-dot"></span>
+                <span>TELEMETRIA AI COMPLETATA</span>
+              </div>
+              <LogoutButton />
             </div>
           </div>
 

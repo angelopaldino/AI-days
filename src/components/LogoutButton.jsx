@@ -1,11 +1,13 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import '../style/LogoutButton.css';
+import '../styles/LogoutButton.css';
 
 const LogoutButton = ({ variant = 'outline' }) => {
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
+
+  if (!user) return null;
 
   const handleLogout = async () => {
     try {
@@ -21,6 +23,7 @@ const LogoutButton = ({ variant = 'outline' }) => {
       onClick={handleLogout} 
       className={`logout-btn logout-btn-${variant}`}
       aria-label="Esci dal sistema"
+      type="button"
     >
       <span className="logout-btn-text">Log Out</span>
       <div className="logout-btn-glow"></div>
