@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useIdea } from '../context/IdeaContext'
 import '../styles/HomePage.css'
 
 function HomePage() {
   const navigate = useNavigate()
+  const { setIdea } = useIdea()
   const [text, setText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isDone, setIsDone] = useState(false)
@@ -26,18 +28,14 @@ function HomePage() {
 
   function handleSubmit(e) {
     e.preventDefault()
-    if (!text.trim()) return
+    const trimmedText = text.trim()
+    if (!trimmedText) return
 
-    setIsLoading(true)
-    setIsDone(false)
+    // Controlla e salva il valore nella variabile 'idea' dello store
+    setIdea(trimmedText)
 
-    setTimeout(() => {
-      setIsLoading(false)
-      setIsDone(true)
-      setTimeout(() => {
-        navigate('/dashboard', { state: { ideaText: text.trim() } })
-      }, 600)
-    }, 1200)
+    // Step successivo: naviga alla dashboard usando useNavigate
+    navigate('/dashboard')
   }
 
   return (

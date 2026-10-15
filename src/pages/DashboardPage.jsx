@@ -1,11 +1,23 @@
-import { Link, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
+import { useIdea } from '../context/IdeaContext'
 import '../styles/DashboardPage.css'
 
 function DashboardPage() {
-  const location = useLocation()
-  const customIdea = location.state?.ideaText
+  const navigate = useNavigate()
+  const { idea } = useIdea()
 
-  const ideaText = customIdea || "“Un'app che collega ristoranti locali con clienti per ridurre lo spreco alimentare, vendendo a prezzo scontato le porzioni invendute a fine giornata.”"
+  useEffect(() => {
+    if (!idea || !idea.trim()) {
+      navigate('/', { replace: true })
+    }
+  }, [idea, navigate])
+
+  if (!idea || !idea.trim()) {
+    return null
+  }
+
+  const ideaText = idea
 
   return (
     <div className="dashboard-page">
