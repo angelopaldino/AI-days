@@ -1,0 +1,197 @@
+:root {
+  --lp-background: #0a0a0a;
+  --lp-surface: #131313;
+  --lp-surface-low: #0e0e0e;
+  --lp-primary: #00f0ff;
+  --lp-primary-dim: #006970;
+  --lp-on-surface: #e5e2e1;
+  --lp-on-surface-variant: rgba(229, 226, 225, 0.6);
+  --lp-outline: #3b494b;
+  --lp-font-display: 'Space Grotesk', sans-serif;
+  --lp-font-body: 'Inter', sans-serif;
+  --lp-font-mono: 'JetBrains Mono', monospace;
+}
+
+.lp-wrapper {
+  position: relative;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  overflow: hidden;
+  z-index: 1;
+}
+
+@media (max-width: 768px) {
+  .lp-wrapper {
+    padding: 16px;
+  }
+}
+
+.lp-bg-noise {
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.lp-header {
+  text-align: center;
+  margin-bottom: 48px;
+}
+
+.lp-title {
+  font-family: var(--lp-font-display);
+  font-size: 32px;
+  line-height: 40px;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+  color: #dbfcff;
+  margin-bottom: 8px;
+  text-transform: uppercase;
+}
+
+.lp-subtitle {
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  color: var(--lp-on-surface-variant);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  opacity: 0.8;
+}
+
+.lp-main-section {
+  width: 100%;
+  max-width: 450px;
+}
+
+.lp-form {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  width: 100%;
+}
+
+.lp-error-message {
+  background-color: rgba(255, 0, 0, 0.1);
+  border: 1px solid rgba(255, 0, 0, 0.3);
+  color: #ff4d4d;
+  padding: 12px;
+  border-radius: 4px;
+  font-family: var(--lp-font-mono);
+  font-size: 11px;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.lp-input-group {
+  position: relative;
+  background-color: var(--lp-surface-low);
+  border: 1px solid #2d2d2d;
+  border-radius: 8px;
+  padding: 20px 24px;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.lp-input-group:focus-within {
+  border-color: rgba(0, 240, 255, 0.5);
+  box-shadow: 0 0 20px rgba(0, 240, 255, 0.05);
+}
+
+.lp-status-bar {
+  position: absolute;
+  left: 0;
+  top: 20px;
+  bottom: 20px;
+  width: 2px;
+  background-color: rgba(0, 240, 255, 0.2);
+  transition: background-color 0.3s ease;
+}
+
+.lp-input-group:focus-within .lp-status-bar {
+  background-color: var(--lp-primary);
+}
+
+.lp-label {
+  display: block;
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: var(--lp-on-surface-variant);
+  margin-bottom: 8px;
+  letter-spacing: 0.15em;
+}
+
+.lp-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--lp-on-surface);
+  font-size: 16px;
+  line-height: 24px;
+  outline: none;
+}
+
+.lp-input::placeholder {
+  color: rgba(185, 202, 203, 0.2);
+}
+
+.lp-btn {
+  position: relative;
+  background: linear-gradient(135deg, var(--lp-primary) 0%, var(--lp-primary-dim) 100%);
+  color: #00363a;
+  border: none;
+  padding: 16px;
+  border-radius: 4px;
+  font-family: var(--lp-font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.lp-btn:active {
+  transform: scale(0.98);
+}
+
+.lp-btn-overlay {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.lp-btn:hover .lp-btn-overlay {
+  opacity: 1;
+}
+
+.lp-btn-text {
+  position: relative;
+  z-index: 10;
+}
+
+.lp-footer {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.lp-footer-text {
+  font-family: var(--lp-font-mono);
+  font-size: 10px;
+  color: rgba(229, 226, 225, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}

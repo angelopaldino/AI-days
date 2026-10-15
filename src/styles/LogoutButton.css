@@ -1,0 +1,51 @@
+.logout-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: 4px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: transparent;
+  overflow: hidden;
+}
+
+/* Outline Variant (Default) */
+.logout-btn-outline {
+  border: 1px solid rgba(132, 148, 149, 0.3); /* outline-variant */
+  color: #b9cacb; /* on-surface-variant */
+}
+
+.logout-btn-outline:hover {
+  border-color: #00f0ff; /* primary-container / neon blue */
+  color: #00f0ff;
+  background-color: rgba(0, 240, 255, 0.05);
+}
+
+.logout-btn-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0, 240, 255, 0.1) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.logout-btn:hover .logout-btn-glow {
+  opacity: 1;
+}
+
+.logout-btn:active {
+  transform: scale(0.98);
+}
+
+.logout-btn-text {
+  position: relative;
+  z-index: 1;
+}
