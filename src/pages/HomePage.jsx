@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import '../styles/HomePage.css'
 
 function HomePage() {
+  const navigate = useNavigate()
   const [text, setText] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isDone, setIsDone] = useState(false)
@@ -32,7 +34,10 @@ function HomePage() {
     setTimeout(() => {
       setIsLoading(false)
       setIsDone(true)
-    }, 1800)
+      setTimeout(() => {
+        navigate('/dashboard', { state: { ideaText: text.trim() } })
+      }, 600)
+    }, 1200)
   }
 
   return (
