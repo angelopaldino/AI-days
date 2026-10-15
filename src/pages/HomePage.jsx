@@ -1,14 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useIdea } from '../context/IdeaContext'
-import { analyzeIdea } from '../services/openaiService'
 import '../styles/HomePage.css'
 
 function HomePage() {
   const navigate = useNavigate()
-  const { setIdea, setIsLoading: setGlobalLoading, setAnalysisData } = useIdea()
+  const { setIdea, setIsLoading: setGlobalLoading } = useIdea()
   const [text, setText] = useState('')
-  const [isButtonLoading, setIsButtonLoading] = useState(false)
 
   const charLength = text.trim().length
 
@@ -26,7 +24,7 @@ function HomePage() {
     densityClass = 'home-page__density-text home-page__density-text--deep'
   }
 
-  async function handleSubmit(e) {
+  function handleSubmit(e) {
     e.preventDefault()
     const trimmedText = text.trim()
     if (!trimmedText) return
@@ -34,43 +32,11 @@ function HomePage() {
     // 1. Salva l'idea nello store
     setIdea(trimmedText)
 
-    // 2. Attiva la pagina di caricamento (Loader futuristico)
+    // 2. Attiva la pagina di caricamento (Loader) sullo store
     setGlobalLoading(true)
-    setIsButtonLoading(true)
 
-    try {
-      const apiKey = import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY
-      const hasRealKey = Boolean(
-        apiKey &&
-        !apiKey.includes('inserisci_qui') &&
-        !apiKey.includes('your_openai') &&
-        apiKey.trim() !== ''
-      )
-
-      let result = null
-
-      if (hasRealKey) {
-        // Chiamata reale alle API di OpenAI
-        result = await analyzeIdea(trimmedText)
-      } else {
-        // Simulazione realistica del tempo di elaborazione per testare il caricamento
-        await new Promise((resolve) => setTimeout(resolve, 3500))
-      }
-
-      if (result && setAnalysisData) {
-        setAnalysisData(result)
-      }
-
-      // 3. Quando il risultato è pronto, naviga alla dashboard
-      navigate('/dashboard')
-    } catch (err) {
-      console.error("Errore durante l'elaborazione dell'idea:", err)
-      // Navighiamo comunque alla dashboard per non bloccare l'interfaccia
-      navigate('/dashboard')
-    } finally {
-      setGlobalLoading(false)
-      setIsButtonLoading(false)
-    }
+    // 3. Naviga direttamente alla dashboard dove avverrà la chiamata API
+    navigate('/dashboard')
   }
 
   return (
@@ -142,29 +108,14 @@ function HomePage() {
                 </div>
 
                 {/* Submit button */}
-                <button
-                  className={`home-page__submit-btn${isButtonLoading ? ' home-page__submit-btn--loading' : ''}`}
-                  type="submit"
-                  disabled={isButtonLoading}
-                >
-                  {isButtonLoading ? (
-                    <span className="home-page__submit-btn-content">
-                      <span className="material-symbols-outlined home-page__submit-btn-spinner">
-                        sync
-                      </span>
-                      <span>Elaborazione Matrice Strategica...</span>
+                <button className="home-page__submit-btn" type="submit">
+                  <span className="home-page__submit-btn-content">
+                    <span>Valida la mia idea</span>
+                    <span className="material-symbols-outlined home-page__submit-btn-arrow">
+                      arrow_forward
                     </span>
-                  ) : (
-                    <>
-                      <span className="home-page__submit-btn-content">
-                        <span>Valida la mia idea</span>
-                        <span className="material-symbols-outlined home-page__submit-btn-arrow">
-                          arrow_forward
-                        </span>
-                      </span>
-                      <div className="home-page__submit-btn-hover-overlay"></div>
-                    </>
-                  )}
+                  </span>
+                  <div className="home-page__submit-btn-hover-overlay"></div>
                 </button>
               </form>
 

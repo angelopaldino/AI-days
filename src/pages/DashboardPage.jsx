@@ -1,28 +1,60 @@
-import { useEffect } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useIdea } from '../context/IdeaContext'
+import { analyzeIdea } from '../services/openaiService'
 import '../styles/DashboardPage.css'
 
 function DashboardPage() {
   const navigate = useNavigate()
-  const { idea, analysisData } = useIdea()
+  const { idea, setIsLoading } = useIdea()
+  const [dashboardData, setDashboardData] = useState(null)
 
   useEffect(() => {
+    // 1. Controlla che ci sia un'idea nello store all'avvio
     if (!idea || !idea.trim()) {
+      setIsLoading(false)
       navigate('/', { replace: true })
+      return
     }
-  }, [idea, navigate])
+
+    let isMounted = true
+
+    const fetchAnalysis = async () => {
+      try {
+        // 2. Effettua la chiamata a OpenAI tramite il servizio openaiService.js
+        const response = await analyzeIdea(idea)
+        
+        // 3. Inserisce la risposta come stato locale della dashboard
+        if (isMounted) {
+          setDashboardData(response)
+        }
+      } catch (error) {
+        console.error("Errore durante l'analisi dell'idea in DashboardPage:", error)
+      } finally {
+        // 4. Spegne il loader sullo store
+        if (isMounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    fetchAnalysis()
+
+    return () => {
+      isMounted = false
+    }
+  }, [idea, navigate, setIsLoading])
 
   if (!idea || !idea.trim()) {
     return null
   }
 
-  // Sintesi dell'idea (da analisi o store)
-  const displayIdea = analysisData?.ideaDescription || idea
+  // Sintesi dell'idea (dalla risposta API o dall'idea dello store)
+  const displayIdea = dashboardData?.ideaDescription || idea
 
   // Score e calcolo dinamico del tachimetro / gauge
-  const score = typeof analysisData?.successScore?.score === 'number'
-    ? Math.max(0, Math.min(100, analysisData.successScore.score))
+  const score = typeof dashboardData?.successScore?.score === 'number'
+    ? Math.max(0, Math.min(100, dashboardData.successScore.score))
     : 72
 
   // Lunghezza arco ~ 298.45 (r=95, angolo=180°)
@@ -44,12 +76,12 @@ function DashboardPage() {
   const potentialColor = isHighPotential ? '#4ae176' : isMediumPotential ? '#f59e0b' : '#ef4444'
 
   // Verdetto Finale
-  const verdictText = (analysisData?.verdict?.text || 'GO').toUpperCase()
+  const verdictText = (dashboardData?.verdict?.text || 'GO').toUpperCase()
   const isGo = verdictText.includes('GO') && !verdictText.includes('NO')
   const verdictColor = isGo ? '#22C55E' : '#EF4444'
   const verdictBg = isGo ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
   const verdictShadow = isGo ? '0 0 40px rgba(34, 197, 94, 0.35)' : '0 0 40px rgba(239, 68, 68, 0.35)'
-  const verdictDesc = analysisData?.successScore?.description || (isGo
+  const verdictDesc = dashboardData?.verdict?.description || dashboardData?.successScore?.description || (isGo
     ? "Mercato in crescita e bisogno reale: l'idea merita di essere sviluppata."
     : "Elevata complessità operativa o forte saturazione: si suggerisce una revisione strategica.")
 
@@ -79,8 +111,8 @@ function DashboardPage() {
     }
   ]
 
-  const difficulties = analysisData?.difficultyAnalysis?.length >= 2
-    ? analysisData.difficultyAnalysis.map((item, idx) => ({
+  const difficulties = dashboardData?.difficultyAnalysis?.length >= 2
+    ? dashboardData.difficultyAnalysis.map((item, idx) => ({
         title: item.title,
         badge: idx === 0 ? "MEDIO-BASSO" : "ATTENZIONE",
         badgeClass: idx === 0 ? "dashboard-badge-pill dashboard-badge-pill--cyan" : "dashboard-badge-pill dashboard-badge-pill--amber",
@@ -127,8 +159,8 @@ function DashboardPage() {
     }
   ]
 
-  const personas = analysisData?.personas?.length >= 3
-    ? analysisData.personas.slice(0, 3).map((p, idx) => {
+  const personas = dashboardData?.personas?.length >= 3
+    ? dashboardData.personas.slice(0, 3).map((p, idx) => {
         const initials = p.name ? p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : `U${idx + 1}`
         return {
           initials,
@@ -168,8 +200,8 @@ function DashboardPage() {
     }
   ]
 
-  const competitors = analysisData?.competitors?.length >= 3
-    ? analysisData.competitors.slice(0, 3).map((c, idx) => ({
+  const competitors = dashboardData?.competitors?.length >= 3
+    ? dashboardData.competitors.slice(0, 3).map((c, idx) => ({
         name: c.name,
         dotColor: idx === 0 ? "#4ae176" : idx === 1 ? "#5de6ff" : "#938ea1",
         core: c.coreBusiness,
