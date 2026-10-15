@@ -1,76 +1,141 @@
 import OpenAI from 'openai';
 
+/**
+ * Inizializzazione del client OpenAI con supporto browser per le chiamate dirette da frontend.
+ * Nota di sicurezza: In un ambiente di produzione reale è raccomandato instradare le chiamate tramite backend.
+ */
+const getApiKey = () => {
+  const key = import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY;
+  if (!key || key.includes('inserisci_qui') || key.includes('your_openai') || key.trim() === '') {
+    return null;
+  }
+  return key;
+};
+
+const apiKey = getApiKey();
+
 const openai = new OpenAI({
-  apiKey: import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY,
-  dangerouslyAllowBrowser: true,
+  apiKey: apiKey || 'dummy-key',
+  dangerouslyAllowBrowser: true, // Abilita l'esecuzione delle richieste direttamente dal browser
 });
 
 /**
- * Analizza un'idea di business utilizzando GPT-4o-mini.
- * Restituisce un oggetto JSON strutturato per la Dashboard.
+ * Esempio di schema e struttura dati allineata a DashboardPage.jsx
+ */
+const SYSTEM_PROMPT = `Sei un Senior Venture Analyst ed esperto di validazione startup e business model (ValidAI Telemetry Core).
+Il tuo obiettivo è analizzare con rigore critico l'idea di business fornita dall'utente e produrre un report telemetrico completo e approfondito.
+
+DEVI rispondere ESCLUSIVAMENTE con un oggetto JSON valido (senza testo prima o dopo) che rispetta rigorosamente questo schema:
+
+{
+  "ideaDescription": "Sintesi chiara, accattivante e professionale dell'idea in una o due frasi.",
+  "successScore": {
+    "score": 78,
+    "description": "Spiegazione sintetica dei fattori chiave che determinano il punteggio (es. mercato, unit economics, scalabilità)."
+  },
+  "difficultyAnalysis": [
+    {
+      "title": "Barriere d'ingresso",
+      "description": "Analisi approfondita sulle barriere all'entrata, concorrenza, acquisizione clienti e scalabilità locale."
+    },
+    {
+      "title": "Sfide di esecuzione",
+      "description": "Analisi delle complessità operative, vincoli logistici, coordinamento fornitori e rischi di churn."
+    }
+  ],
+  "verdict": {
+    "text": "GO",
+    "color": "#22C55E",
+    "description": "Mercato in crescita e bisogno reale: l'idea merita di essere sviluppata."
+  },
+  "personas": [
+    {
+      "name": "Giulia Rossi",
+      "role": "Studentessa universitaria, 23 anni",
+      "quote": "Cosa pensa e cerca questa persona: budget limitato, acquisti last-minute da smartphone, sensibile al prezzo e alla sostenibilità.",
+      "icon": "school"
+    },
+    {
+      "name": "Marco Bianchi",
+      "role": "Titolare di trattoria, 48 anni",
+      "quote": "Esigenza operativa: vuole monetizzare i surplus di cucina evitando sprechi con uno strumento rapido e intuitivo.",
+      "icon": "restaurant"
+    },
+    {
+      "name": "Elena Conti",
+      "role": "Impiegata aziendale, 35 anni",
+      "quote": "Abitudine di consumo: lavora in centro, apprezza pasti convenienti e sani per la cena sostenendo le attività di quartiere.",
+      "icon": "work"
+    }
+  ],
+  "competitors": [
+    {
+      "name": "Nome Competitor 1 (es. Leader di mercato esistente o analogo)",
+      "coreBusiness": "Offerta e modello di business principale del competitor.",
+      "weakPoint": "Vulnerabilità o limite del competitor che l'idea dell'utente può aggredire."
+    },
+    {
+      "name": "Nome Competitor 2 (es. Alternativa diretta o indiretta)",
+      "coreBusiness": "Offerta e modello di business del secondo competitor.",
+      "weakPoint": "Punto debole o limitazione geografica/tecnologica del competitor."
+    },
+    {
+      "name": "Nome Competitor 3 (es. Soluzione tradizionale o free)",
+      "coreBusiness": "Come gli utenti risolvono attualmente il problema in modo alternativo.",
+      "weakPoint": "Mancanza di incentivo economico, scalabilità o friction di utilizzo."
+    }
+  ]
+}
+
+Regole vincolanti:
+1. "score" deve essere un numero intero compreso tra 0 e 100.
+2. "verdict.text" deve essere rigorosamente "GO" oppure "NO GO".
+3. "verdict.color" deve essere "#22C55E" per GO o "#EF4444" per NO GO.
+4. Fornisci SEMPRE esattamente 2 difficultyAnalysis, esattamente 3 personas e esattamente 3 competitors.
+5. Tutto il contenuto testuale deve essere redatto in lingua italiana fluida, analitica e professionale.`;
+
+/**
+ * Analizza un'idea di business tramite OpenAI GPT-4o-mini
+ * con output forzato in formato JSON (response_format: { type: "json_object" }).
+ *
+ * @param {string} ideaText - Il testo descrittivo dell'idea inserito dall'utente.
+ * @returns {Promise<Object>} Oggetto JSON strutturato pronto per DashboardPage.
  */
 export const analyzeIdea = async (ideaText) => {
+  const activeKey = getApiKey();
+  if (!activeKey) {
+    throw new Error(
+      "Chiave OPENAI_API_KEY non configurata o non valida nel file .env. Inserisci la tua chiave per effettuare l'analisi con l'API."
+    );
+  }
+
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
+      model: 'gpt-4o-mini',
       messages: [
         {
-          role: "system",
-          content: `Sei un esperto analista di business e startup. 
-          Il tuo compito è analizzare l'idea dell'utente e fornire un report dettagliato in formato JSON.
-          
-          La risposta DEVE essere un oggetto JSON con questa esatta struttura:
-          {
-            "ideaDescription": "Sintesi professionale dell'idea in una frase",
-            "successScore": {
-              "score": 85, // Un numero tra 0 e 100
-              "description": "Breve spiegazione del punteggio"
-            },
-            "difficultyAnalysis": [
-              {
-                "title": "Titolo dell'analisi (es. Analisi di Mercato)",
-                "description": "Descrizione dettagliata delle sfide o opportunità"
-              },
-              {
-                "title": "Titolo (es. Barriere all'Entrata)",
-                "description": "Descrizione"
-              }
-            ],
-            "verdict": {
-              "text": "GO", // "GO",  o "NO GO"
-              "color": "cyan" // "cyan" per GO,  "red" per NO GO
-            },
-            "personas": [
-              {
-                "name": "Nome fittizio",
-                "role": "Ruolo lavorativo",
-                "quote": "Cosa direbbe questo utente sull'idea",
-                "icon": "icon_name" // Scegli tra: person, restaurant, inventory_2, shopping_cart, work, school
-              }
-            ],
-            "competitors": [
-              {
-                "name": "Nome Competitor",
-                "coreBusiness": "Cosa fanno principalmente",
-                "weakPoint": "Punto debole rispetto all'idea dell'utente"
-              }
-            ]
-          }
-          
-          Rispondi esclusivamente in lingua italiana.
-          Fornisci sempre esattamente 2 difficultyAnalysis, 3 personas, e 3 competitors.`
+          role: 'system',
+          content: SYSTEM_PROMPT,
         },
         {
-          role: "user",
-          content: `Analizza questa idea di business: ${ideaText}`
-        }
+          role: 'user',
+          content: `Ecco l'idea di business da analizzare e convalidare:\n\n"${ideaText.trim()}"`,
+        },
       ],
-      response_format: { type: "json_object" },
+      // Rinforzo esplicito del formato JSON strutturato
+      response_format: { type: 'json_object' },
+      temperature: 0.7,
     });
 
-    return JSON.parse(response.choices[0].message.content);
+    const rawContent = response.choices?.[0]?.message?.content;
+    if (!rawContent) {
+      throw new Error("Risposta vuota ricevuta dall'API OpenAI.");
+    }
+
+    const parsedData = JSON.parse(rawContent);
+    return parsedData;
   } catch (error) {
-    console.error("Errore durante l'analisi dell'idea:", error);
+    console.error("Errore durante la chiamata a OpenAI analyzeIdea:", error);
     throw error;
   }
 };

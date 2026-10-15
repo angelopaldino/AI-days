@@ -5,9 +5,10 @@ const IdeaContext = createContext();
 export const IdeaProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [idea, setIdea] = useState("");
+  const [analysisData, setAnalysisData] = useState(null);
 
   return (
-    <IdeaContext.Provider value={{ isLoading, setIsLoading, idea, setIdea }}>
+    <IdeaContext.Provider value={{ isLoading, setIsLoading, idea, setIdea, analysisData, setAnalysisData }}>
       {children}
     </IdeaContext.Provider>
   );

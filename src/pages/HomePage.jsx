@@ -1,14 +1,14 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useIdea } from '../context/IdeaContext'
+import { analyzeIdea } from '../services/openaiService'
 import '../styles/HomePage.css'
 
 function HomePage() {
   const navigate = useNavigate()
-  const { setIdea } = useIdea()
+  const { setIdea, setIsLoading: setGlobalLoading, setAnalysisData } = useIdea()
   const [text, setText] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
-  const [isDone, setIsDone] = useState(false)
+  const [isButtonLoading, setIsButtonLoading] = useState(false)
 
   const charLength = text.trim().length
 
@@ -26,16 +26,51 @@ function HomePage() {
     densityClass = 'home-page__density-text home-page__density-text--deep'
   }
 
-  function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault()
     const trimmedText = text.trim()
     if (!trimmedText) return
 
-    // Controlla e salva il valore nella variabile 'idea' dello store
+    // 1. Salva l'idea nello store
     setIdea(trimmedText)
 
-    // Step successivo: naviga alla dashboard usando useNavigate
-    navigate('/dashboard')
+    // 2. Attiva la pagina di caricamento (Loader futuristico)
+    setGlobalLoading(true)
+    setIsButtonLoading(true)
+
+    try {
+      const apiKey = import.meta.env.OPENAI_API_KEY || import.meta.env.VITE_OPENAI_API_KEY
+      const hasRealKey = Boolean(
+        apiKey &&
+        !apiKey.includes('inserisci_qui') &&
+        !apiKey.includes('your_openai') &&
+        apiKey.trim() !== ''
+      )
+
+      let result = null
+
+      if (hasRealKey) {
+        // Chiamata reale alle API di OpenAI
+        result = await analyzeIdea(trimmedText)
+      } else {
+        // Simulazione realistica del tempo di elaborazione per testare il caricamento
+        await new Promise((resolve) => setTimeout(resolve, 3500))
+      }
+
+      if (result && setAnalysisData) {
+        setAnalysisData(result)
+      }
+
+      // 3. Quando il risultato è pronto, naviga alla dashboard
+      navigate('/dashboard')
+    } catch (err) {
+      console.error("Errore durante l'elaborazione dell'idea:", err)
+      // Navighiamo comunque alla dashboard per non bloccare l'interfaccia
+      navigate('/dashboard')
+    } finally {
+      setGlobalLoading(false)
+      setIsButtonLoading(false)
+    }
   }
 
   return (
@@ -108,23 +143,16 @@ function HomePage() {
 
                 {/* Submit button */}
                 <button
-                  className={`home-page__submit-btn${isLoading ? ' home-page__submit-btn--loading' : ''}`}
+                  className={`home-page__submit-btn${isButtonLoading ? ' home-page__submit-btn--loading' : ''}`}
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isButtonLoading}
                 >
-                  {isLoading ? (
+                  {isButtonLoading ? (
                     <span className="home-page__submit-btn-content">
                       <span className="material-symbols-outlined home-page__submit-btn-spinner">
                         sync
                       </span>
                       <span>Elaborazione Matrice Strategica...</span>
-                    </span>
-                  ) : isDone ? (
-                    <span className="home-page__submit-btn-content">
-                      <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
-                        check_circle
-                      </span>
-                      <span>Audit Generato</span>
                     </span>
                   ) : (
                     <>

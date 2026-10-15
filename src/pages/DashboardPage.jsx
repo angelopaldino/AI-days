@@ -5,7 +5,7 @@ import '../styles/DashboardPage.css'
 
 function DashboardPage() {
   const navigate = useNavigate()
-  const { idea } = useIdea()
+  const { idea, analysisData } = useIdea()
 
   useEffect(() => {
     if (!idea || !idea.trim()) {
@@ -17,7 +17,166 @@ function DashboardPage() {
     return null
   }
 
-  const ideaText = idea
+  // Sintesi dell'idea (da analisi o store)
+  const displayIdea = analysisData?.ideaDescription || idea
+
+  // Score e calcolo dinamico del tachimetro / gauge
+  const score = typeof analysisData?.successScore?.score === 'number'
+    ? Math.max(0, Math.min(100, analysisData.successScore.score))
+    : 72
+
+  // Lunghezza arco ~ 298.45 (r=95, angolo=180°)
+  const dashOffset = (298.45 * (1 - score / 100)).toFixed(1)
+  
+  // Calcolo posizione della lancetta
+  const theta = Math.PI * (1 - score / 100)
+  const needleX = Math.round(120 + 74 * Math.cos(theta))
+  const needleY = Math.round(120 - 74 * Math.sin(theta))
+
+  // Badge potenziale in base allo score
+  const isHighPotential = score >= 70
+  const isMediumPotential = score >= 50 && score < 70
+  const potentialText = isHighPotential
+    ? 'Potenziale Elevato'
+    : isMediumPotential
+    ? 'Potenziale Medio'
+    : 'Rischio Elevato'
+  const potentialColor = isHighPotential ? '#4ae176' : isMediumPotential ? '#f59e0b' : '#ef4444'
+
+  // Verdetto Finale
+  const verdictText = (analysisData?.verdict?.text || 'GO').toUpperCase()
+  const isGo = verdictText.includes('GO') && !verdictText.includes('NO')
+  const verdictColor = isGo ? '#22C55E' : '#EF4444'
+  const verdictBg = isGo ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)'
+  const verdictShadow = isGo ? '0 0 40px rgba(34, 197, 94, 0.35)' : '0 0 40px rgba(239, 68, 68, 0.35)'
+  const verdictDesc = analysisData?.successScore?.description || (isGo
+    ? "Mercato in crescita e bisogno reale: l'idea merita di essere sviluppata."
+    : "Elevata complessità operativa o forte saturazione: si suggerisce una revisione strategica.")
+
+  // Analisi Difficoltà
+  const defaultDifficulties = [
+    {
+      title: "Barriere d'ingresso",
+      badge: "MEDIO-BASSO",
+      badgeClass: "dashboard-badge-pill dashboard-badge-pill--cyan",
+      icon: "shield",
+      iconColor: "#5de6ff",
+      description: "La creazione di una piattaforma software è accessibile, ma la vera barriera risiede nell'acquisizione iniziale di ristoratori partner locali e nell'attivazione di una massa critica di utenti prima di raggiungere la sostenibilità economica nelle singole città.",
+      footerLeft: "Costo replicabilità tech: Basso",
+      footerRight: "Attrito onboarding: Rilevante",
+      footerRightColor: "#e4e1e9"
+    },
+    {
+      title: "Sfide di esecuzione",
+      badge: "ATTENZIONE",
+      badgeClass: "dashboard-badge-pill dashboard-badge-pill--amber",
+      icon: "warning",
+      iconColor: "#fbbf24",
+      description: "Gestione logistica delle finestre di ritiro a orari serali stringenti, coordinamento costante con la disponibilità reale dell'invenduto giornaliero e mantenimento di un'esperienza cliente affidabile senza deludere le aspettative di qualità del cibo.",
+      footerLeft: "Rischio no-show: 18% medio",
+      footerRight: "Controllo qualità: Critico",
+      footerRightColor: "#fbbf24"
+    }
+  ]
+
+  const difficulties = analysisData?.difficultyAnalysis?.length >= 2
+    ? analysisData.difficultyAnalysis.map((item, idx) => ({
+        title: item.title,
+        badge: idx === 0 ? "MEDIO-BASSO" : "ATTENZIONE",
+        badgeClass: idx === 0 ? "dashboard-badge-pill dashboard-badge-pill--cyan" : "dashboard-badge-pill dashboard-badge-pill--amber",
+        icon: idx === 0 ? "shield" : "warning",
+        iconColor: idx === 0 ? "#5de6ff" : "#fbbf24",
+        description: item.description,
+        footerLeft: idx === 0 ? "Fattibilità tecnica: Analizzata" : "Complessità operativa: Monitorata",
+        footerRight: idx === 0 ? "Attrito: Rilevante" : "Controllo: Critico",
+        footerRightColor: idx === 0 ? "#e4e1e9" : "#fbbf24"
+      }))
+    : defaultDifficulties
+
+  // User Personas
+  const defaultPersonas = [
+    {
+      initials: "GR",
+      avatarClass: "dashboard-persona-avatar--1",
+      name: "Giulia Rossi",
+      sub: "Studentessa universitaria, 23 anni",
+      body: "Budget limitato, acquisti last-minute tramite smartphone, molto sensibile al risparmio e alla sostenibilità ambientale.",
+      footerLeft: "Willingness to pay: Bassa",
+      footerRight: "Freq: 3-4x/sett",
+      footerRightColor: "#5de6ff"
+    },
+    {
+      initials: "MB",
+      avatarClass: "dashboard-persona-avatar--2",
+      name: "Marco Bianchi",
+      sub: "Titolare di trattoria, 48 anni",
+      body: "Punta a monetizzare i surplus di cucina evitando sprechi, cerca uno strumento intuitivo senza complicazioni gestionali.",
+      footerLeft: "Priorità: Zero churn cucina",
+      footerRight: "Recupero: ~15% marg",
+      footerRightColor: "#4ae176"
+    },
+    {
+      initials: "EC",
+      avatarClass: "dashboard-persona-avatar--3",
+      name: "Elena Conti",
+      sub: "Impiegata attenta alla sostenibilità, 35 anni",
+      body: "Lavora in centro, apprezza pasti sani e convenienti per la cena sostenendo le piccole attività del quartiere.",
+      footerLeft: "Filtro: Bio/Km0",
+      footerRight: "Orario: 19:30-21:00",
+      footerRightColor: "#cabeff"
+    }
+  ]
+
+  const personas = analysisData?.personas?.length >= 3
+    ? analysisData.personas.slice(0, 3).map((p, idx) => {
+        const initials = p.name ? p.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : `U${idx + 1}`
+        return {
+          initials,
+          avatarClass: `dashboard-persona-avatar--${(idx % 3) + 1}`,
+          name: p.name,
+          sub: p.role,
+          body: p.quote,
+          footerLeft: `Profilo: Target ${idx + 1}`,
+          footerRight: "Segmento convalidato",
+          footerRightColor: idx === 0 ? "#5de6ff" : idx === 1 ? "#4ae176" : "#cabeff"
+        }
+      })
+    : defaultPersonas
+
+  // Competitor
+  const defaultCompetitors = [
+    {
+      name: "Too Good To Go",
+      dotColor: "#4ae176",
+      core: "Magic Box di cibi invenduti da forni e market",
+      weakness: "Scelta del cibo cieca per l'utente, nessun controllo su allergeni/preferenze specifiche",
+      isEven: false
+    },
+    {
+      name: "Karma",
+      dotColor: "#5de6ff",
+      core: "Ritiro da ristoranti selezionati a prezzo ridotto",
+      weakness: "Copertura geografica ridotta e scarsa penetrazione nei centri urbani secondari",
+      isEven: true
+    },
+    {
+      name: "Olio",
+      dotColor: "#938ea1",
+      core: "Condivisione gratuita di cibo tra vicini e negozi",
+      weakness: "Modello basato su volontariato senza incentivo economico per i ristoratori professionali",
+      isEven: false
+    }
+  ]
+
+  const competitors = analysisData?.competitors?.length >= 3
+    ? analysisData.competitors.slice(0, 3).map((c, idx) => ({
+        name: c.name,
+        dotColor: idx === 0 ? "#4ae176" : idx === 1 ? "#5de6ff" : "#938ea1",
+        core: c.coreBusiness,
+        weakness: c.weakPoint,
+        isEven: idx % 2 === 1
+      }))
+    : defaultCompetitors
 
   return (
     <div className="dashboard-page">
@@ -57,7 +216,7 @@ function DashboardPage() {
               </div>
 
               <p className="dashboard-idea-card__text">
-                {ideaText.startsWith('“') ? ideaText : `“${ideaText}”`}
+                {displayIdea.startsWith('“') ? displayIdea : `“${displayIdea}”`}
               </p>
 
               <div className="dashboard-idea-card__tags">
@@ -126,16 +285,16 @@ function DashboardPage() {
                     stroke="url(#scoreArcGradient)"
                     strokeWidth="14"
                     strokeDasharray="298.45"
-                    strokeDashoffset="83.5"
+                    strokeDashoffset={dashOffset}
                     strokeLinecap="round"
                   />
                   {/* Ticks di riferimento */}
                   <line x1="28" y1="120" x2="38" y2="120" stroke="#938ea1" strokeWidth="2" />
                   <line x1="120" y1="28" x2="120" y2="38" stroke="#938ea1" strokeWidth="2" />
                   <line x1="202" y1="120" x2="212" y2="120" stroke="#938ea1" strokeWidth="2" />
-                  {/* Lancetta per score 72 */}
+                  {/* Lancetta orientata per score */}
                   <g filter="url(#needleGlow)">
-                    <line x1="120" y1="120" x2="168" y2="62" stroke="#cabeff" strokeWidth="3.5" strokeLinecap="round" />
+                    <line x1="120" y1="120" x2={needleX} y2={needleY} stroke="#cabeff" strokeWidth="3.5" strokeLinecap="round" />
                     <circle cx="120" cy="120" r="7" fill="#cabeff" />
                     <circle cx="120" cy="120" r="3" fill="#131318" />
                   </g>
@@ -143,18 +302,20 @@ function DashboardPage() {
 
                 <div className="dashboard-gauge-value">
                   <div className="dashboard-gauge-number">
-                    72 <span className="dashboard-gauge-max">/ 100</span>
+                    {score} <span className="dashboard-gauge-max">/ 100</span>
                   </div>
                   <div className="dashboard-gauge-pill">
-                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: '#4ae176' }}></span>
-                    Potenziale Elevato
+                    <span style={{ width: '6px', height: '6px', borderRadius: '9999px', backgroundColor: potentialColor }}></span>
+                    {potentialText}
                   </div>
                 </div>
               </div>
 
               <div className="dashboard-score-card__footer">
                 <span>Soglia Break-even: 60/100</span>
-                <span style={{ color: '#4ae176' }}>+12 pt sopra media</span>
+                <span style={{ color: potentialColor }}>
+                  {score >= 60 ? `+${score - 60} pt sopra soglia` : `${score - 60} pt sotto soglia`}
+                </span>
               </div>
             </div>
 
@@ -163,7 +324,7 @@ function DashboardPage() {
               <div className="dashboard-verdict-card__glow"></div>
               <div className="dashboard-card__header" style={{ position: 'relative', zIndex: 10 }}>
                 <div className="dashboard-card__title-group">
-                  <span className="material-symbols-outlined" style={{ color: '#4ae176', fontSize: '20px' }}>
+                  <span className="material-symbols-outlined" style={{ color: verdictColor, fontSize: '20px' }}>
                     verified
                   </span>
                   <h2 className="dashboard-card__title">Verdetto Finale</h2>
@@ -171,11 +332,16 @@ function DashboardPage() {
                 <span className="dashboard-verdict-card__phase">FASE 1: CONVALIDATA</span>
               </div>
 
-              {/* Badge GO Prominente */}
+              {/* Badge GO / NO GO */}
               <div className="dashboard-verdict-center">
-                <div className="dashboard-verdict-badge">GO</div>
+                <div 
+                  className="dashboard-verdict-badge"
+                  style={{ color: verdictColor, backgroundColor: verdictBg, boxShadow: verdictShadow }}
+                >
+                  {verdictText}
+                </div>
                 <p className="dashboard-verdict-desc">
-                  Mercato in crescita e bisogno reale: l'idea merita di essere sviluppata.
+                  {verdictDesc}
                 </p>
               </div>
 
@@ -206,53 +372,30 @@ function DashboardPage() {
 
           {/* Sezione 3: Analisi di Difficoltà */}
           <div className="dashboard-grid-2">
-            {/* Card: Barriere d'ingresso */}
-            <div className="dashboard-analysis-card">
-              <div>
-                <div className="dashboard-card__header" style={{ marginBottom: '0.75rem' }}>
-                  <div className="dashboard-card__title-group">
-                    <span className="material-symbols-outlined" style={{ color: '#5de6ff', fontSize: '20px' }}>
-                      shield
+            {difficulties.map((diff, idx) => (
+              <div key={idx} className="dashboard-analysis-card">
+                <div>
+                  <div className="dashboard-card__header" style={{ marginBottom: '0.75rem' }}>
+                    <div className="dashboard-card__title-group">
+                      <span className="material-symbols-outlined" style={{ color: diff.iconColor, fontSize: '20px' }}>
+                        {diff.icon}
+                      </span>
+                      <h3 className="dashboard-card__title">{diff.title}</h3>
+                    </div>
+                    <span className={diff.badgeClass}>
+                      {diff.badge}
                     </span>
-                    <h3 className="dashboard-card__title">Barriere d'ingresso</h3>
                   </div>
-                  <span className="dashboard-badge-pill dashboard-badge-pill--cyan">
-                    MEDIO-BASSO
-                  </span>
+                  <p className="dashboard-analysis-card__desc">
+                    {diff.description}
+                  </p>
                 </div>
-                <p className="dashboard-analysis-card__desc">
-                  La creazione di una piattaforma software è accessibile, ma la vera barriera risiede nell'acquisizione iniziale di ristoratori partner locali e nell'attivazione di una massa critica di utenti prima di raggiungere la sostenibilità economica nelle singole città.
-                </p>
-              </div>
-              <div className="dashboard-analysis-card__footer">
-                <span>Costo replicabilità tech: Basso</span>
-                <span style={{ color: '#e4e1e9' }}>Attrito onboarding: Rilevante</span>
-              </div>
-            </div>
-
-            {/* Card: Sfide di esecuzione */}
-            <div className="dashboard-analysis-card">
-              <div>
-                <div className="dashboard-card__header" style={{ marginBottom: '0.75rem' }}>
-                  <div className="dashboard-card__title-group">
-                    <span className="material-symbols-outlined" style={{ color: '#fbbf24', fontSize: '20px' }}>
-                      warning
-                    </span>
-                    <h3 className="dashboard-card__title">Sfide di esecuzione</h3>
-                  </div>
-                  <span className="dashboard-badge-pill dashboard-badge-pill--amber">
-                    ATTENZIONE
-                  </span>
+                <div className="dashboard-analysis-card__footer">
+                  <span>{diff.footerLeft}</span>
+                  <span style={{ color: diff.footerRightColor }}>{diff.footerRight}</span>
                 </div>
-                <p className="dashboard-analysis-card__desc">
-                  Gestione logistica delle finestre di ritiro a orari serali stringenti, coordinamento costante con la disponibilità reale dell'invenduto giornaliero e mantenimento di un'esperienza cliente affidabile senza deludere le aspettative di qualità del cibo.
-                </p>
               </div>
-              <div className="dashboard-analysis-card__footer">
-                <span>Rischio no-show: 18% medio</span>
-                <span style={{ color: '#fbbf24' }}>Controllo qualità: Critico</span>
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Sezione 4: User Personas */}
@@ -268,71 +411,28 @@ function DashboardPage() {
             </div>
 
             <div className="dashboard-grid-3">
-              {/* Persona 1 */}
-              <div className="dashboard-persona-card">
-                <div>
-                  <div className="dashboard-persona-card__header">
-                    <div className="dashboard-persona-avatar dashboard-persona-avatar--1">
-                      GR
+              {personas.map((persona, idx) => (
+                <div key={idx} className="dashboard-persona-card">
+                  <div>
+                    <div className="dashboard-persona-card__header">
+                      <div className={`dashboard-persona-avatar ${persona.avatarClass}`}>
+                        {persona.initials}
+                      </div>
+                      <div>
+                        <h4 className="dashboard-persona-name">{persona.name}</h4>
+                        <span className="dashboard-persona-sub">{persona.sub}</span>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="dashboard-persona-name">Giulia Rossi</h4>
-                      <span className="dashboard-persona-sub">Studentessa universitaria, 23 anni</span>
-                    </div>
+                    <p className="dashboard-persona-body">
+                      {persona.body}
+                    </p>
                   </div>
-                  <p className="dashboard-persona-body">
-                    Budget limitato, acquisti last-minute tramite smartphone, molto sensibile al risparmio e alla sostenibilità ambientale.
-                  </p>
-                </div>
-                <div className="dashboard-persona-footer">
-                  <span>Willingness to pay: Bassa</span>
-                  <span style={{ color: '#5de6ff' }}>Freq: 3-4x/sett</span>
-                </div>
-              </div>
-
-              {/* Persona 2 */}
-              <div className="dashboard-persona-card">
-                <div>
-                  <div className="dashboard-persona-card__header">
-                    <div className="dashboard-persona-avatar dashboard-persona-avatar--2">
-                      MB
-                    </div>
-                    <div>
-                      <h4 className="dashboard-persona-name">Marco Bianchi</h4>
-                      <span className="dashboard-persona-sub">Titolare di trattoria, 48 anni</span>
-                    </div>
+                  <div className="dashboard-persona-footer">
+                    <span>{persona.footerLeft}</span>
+                    <span style={{ color: persona.footerRightColor }}>{persona.footerRight}</span>
                   </div>
-                  <p className="dashboard-persona-body">
-                    Punta a monetizzare i surplus di cucina evitando sprechi, cerca uno strumento intuitivo senza complicazioni gestionali.
-                  </p>
                 </div>
-                <div className="dashboard-persona-footer">
-                  <span>Priorità: Zero churn cucina</span>
-                  <span style={{ color: '#4ae176' }}>Recupero: ~15% marg</span>
-                </div>
-              </div>
-
-              {/* Persona 3 */}
-              <div className="dashboard-persona-card">
-                <div>
-                  <div className="dashboard-persona-card__header">
-                    <div className="dashboard-persona-avatar dashboard-persona-avatar--3">
-                      EC
-                    </div>
-                    <div>
-                      <h4 className="dashboard-persona-name">Elena Conti</h4>
-                      <span className="dashboard-persona-sub">Impiegata attenta alla sostenibilità, 35 anni</span>
-                    </div>
-                  </div>
-                  <p className="dashboard-persona-body">
-                    Lavora in centro, apprezza pasti sani e convenienti per la cena sostenendo le piccole attività del quartiere.
-                  </p>
-                </div>
-                <div className="dashboard-persona-footer">
-                  <span>Filtro: Bio/Km0</span>
-                  <span style={{ color: '#cabeff' }}>Orario: 19:30-21:00</span>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
 
@@ -358,42 +458,20 @@ function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  <tr>
-                    <td className="dashboard-table-name">
-                      <span className="dashboard-table-dot" style={{ backgroundColor: '#4ae176' }}></span>
-                      Too Good To Go
-                    </td>
-                    <td style={{ color: '#c9c4d8' }}>
-                      Magic Box di cibi invenduti da forni e market
-                    </td>
-                    <td className="dashboard-table-weakness">
-                      Scelta del cibo cieca per l'utente, nessun controllo su allergeni/preferenze specifiche
-                    </td>
-                  </tr>
-                  <tr style={{ backgroundColor: 'rgba(31, 31, 36, 0.4)' }}>
-                    <td className="dashboard-table-name">
-                      <span className="dashboard-table-dot" style={{ backgroundColor: '#5de6ff' }}></span>
-                      Karma
-                    </td>
-                    <td style={{ color: '#c9c4d8' }}>
-                      Ritiro da ristoranti selezionati a prezzo ridotto
-                    </td>
-                    <td className="dashboard-table-weakness">
-                      Copertura geografica ridotta e scarsa penetrazione nei centri urbani secondari
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="dashboard-table-name">
-                      <span className="dashboard-table-dot" style={{ backgroundColor: '#938ea1' }}></span>
-                      Olio
-                    </td>
-                    <td style={{ color: '#c9c4d8' }}>
-                      Condivisione gratuita di cibo tra vicini e negozi
-                    </td>
-                    <td className="dashboard-table-weakness">
-                      Modello basato su volontariato senza incentivo economico per i ristoratori professionali
-                    </td>
-                  </tr>
+                  {competitors.map((comp, idx) => (
+                    <tr key={idx} style={{ backgroundColor: comp.isEven ? 'rgba(31, 31, 36, 0.4)' : undefined }}>
+                      <td className="dashboard-table-name">
+                        <span className="dashboard-table-dot" style={{ backgroundColor: comp.dotColor }}></span>
+                        {comp.name}
+                      </td>
+                      <td style={{ color: '#c9c4d8' }}>
+                        {comp.core}
+                      </td>
+                      <td className="dashboard-table-weakness">
+                        {comp.weakness}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </div>
@@ -404,7 +482,7 @@ function DashboardPage() {
                 tips_and_updates
               </span>
               <p className="dashboard-opportunity-text">
-                <strong style={{ color: '#e4e1e9' }}>Opportunità differenziante:</strong> Offrire trasparenza sulle singole porzioni (piatto esatto anziché surprise box generica) risolve il punto di frizione principale di Too Good To Go, sbloccando clienti disposti a pagare un ticket medio leggermente più alto (+20-30%).
+                <strong style={{ color: '#e4e1e9' }}>Opportunità differenziante:</strong> Offrire trasparenza sulle singole porzioni (piatto esatto anziché surprise box generica) risolve il punto di frizione principale dei competitor sul mercato, sbloccando clienti disposti a pagare un ticket medio leggermente più alto (+20-30%).
               </p>
             </div>
           </div>
